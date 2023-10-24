@@ -4,6 +4,7 @@
 #include "ParseNumber.h"
 
 #include <limits>
+#include <type_traits>
 
 #include "cstdlib"
 
@@ -23,26 +24,23 @@ bool ParseInt64(std::string_view str, int64_t& value) {
 }
 
 bool ParseInt(std::string_view str, int& value) {
-    int result;
-    char* end;
-    std::string str2 = std::string(str);
-    result = std::strtol(str.data(), &end, 10);
-    if (end == str.data() + str.size()) {
-        value = result;
-        return true;
-    } else {
-        return false;
-    }
+    // check int and int32 are the same
+    static_assert(std::is_same_v<int, int32_t>, "int and int32_t are not the same");
+    return ParseInt32(str, value);
 }
 
 bool ParseInt32(std::string_view str, int32_t& value) {
-    int32_t result;
     char* end;
     std::string str2 = std::string(str);
-    result = std::strtol(str.data(), &end, 10);
+    auto result = std::strtol(str.data(), &end, 10);
     if (end == str.data() + str.size()) {
-        value = result;
-        return true;
+        // check signed long to int32_t overflow
+        if (result < std::numeric_limits<int32_t>::min() || result > std::numeric_limits<int32_t>::max()) {
+            return false;
+        } else {
+            value = (int32_t) result;
+            return true;
+        }
     } else {
         return false;
     }
@@ -50,13 +48,17 @@ bool ParseInt32(std::string_view str, int32_t& value) {
 
 
 bool ParseUInt32(std::string_view str, uint32_t& value) {
-    uint32_t result;
     char* end;
     std::string str2 = std::string(str);
-    result = std::strtoul(str.data(), &end, 10);
+    auto result = std::strtoul(str.data(), &end, 10);
     if (end == str.data() + str.size()) {
-        value = result;
-        return true;
+        // check unsigned long to uint32_t overflow
+        if (result > std::numeric_limits<uint32_t>::max()) {
+            return false;
+        } else {
+            value = (uint32_t) result;
+            return true;
+        }
     } else {
         return false;
     }
@@ -125,6 +127,78 @@ bool ParseInt16(std::string_view str, int16_t& value) {
     }
     value = (int16_t) result;
     return true;
+}
+
+std::optional<int> ParseInt(std::string_view str) {
+    int result = 0;
+    if (!ParseInt(str, result)) {
+        return std::nullopt;
+    }
+    return result;
+}
+
+std::optional<int32_t> ParseInt32(std::string_view str) {
+    int32_t result = 0;
+    if (!ParseInt32(str, result)) {
+        return std::nullopt;
+    }
+    return result;
+}
+
+std::optional<int64_t> ParseInt64(std::string_view str) {
+    int64_t result = 0;
+    if (!ParseInt64(str, result)) {
+        return std::nullopt;
+    }
+    return result;
+}
+
+std::optional<uint32_t> ParseUInt32(std::string_view str) {
+    uint32_t result = 0;
+    if (!ParseUInt32(str, result)) {
+        return std::nullopt;
+    }
+    return result;
+}
+
+std::optional<uint64_t> ParseUInt64(std::string_view str) {
+    uint64_t result = 0;
+    if (!ParseUInt64(str, result)) {
+        return std::nullopt;
+    }
+    return result;
+}
+
+std::optional<uint16_t> ParseUInt16(std::string_view str) {
+    uint16_t result = 0;
+    if (!ParseUInt16(str, result)) {
+        return std::nullopt;
+    }
+    return result;
+}
+
+std::optional<int16_t> ParseInt16(std::string_view str) {
+    int16_t result = 0;
+    if (!ParseInt16(str, result)) {
+        return std::nullopt;
+    }
+    return result;
+}
+
+std::optional<double> ParseDouble(std::string_view str) {
+    double result = 0;
+    if (!ParseDouble(str, result)) {
+        return std::nullopt;
+    }
+    return result;
+}
+
+std::optional<float> ParseFloat(std::string_view str) {
+    float result = 0;
+    if (!ParseFloat(str, result)) {
+        return std::nullopt;
+    }
+    return result;
 }
 
 }
