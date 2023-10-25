@@ -23,27 +23,27 @@ public:
 
     uint16_t port = 0;
 
-    INetSocketAddress() noexcept = default;
+    constexpr INetSocketAddress() noexcept = default;
 
-    INetSocketAddress(const INetAddress addr, uint16_t p) noexcept: address(addr), port(p) {}
+    constexpr INetSocketAddress(const INetAddress addr, uint16_t p) noexcept: address(addr), port(p) {}
 
     INetSocketAddress(std::string_view addr, uint16_t p) noexcept: address(INetAddress::FromString(addr)), port(p) {}
 
-    [[nodiscard]] inline bool IsIpv4() const noexcept {
+    [[nodiscard]] constexpr bool IsIpv4() const noexcept {
         return address.IsIpv4();
     }
 
-    [[nodiscard]] inline bool IsIpv6() const noexcept {
+    [[nodiscard]] constexpr bool IsIpv6() const noexcept {
         return address.IsIpv6();
     }
 
-    [[nodiscard]] inline bool IsValid() const noexcept {
+    [[nodiscard]] constexpr bool IsValid() const noexcept {
         return address.IsValid();
     }
 
     [[nodiscard]] std::string ToString() const;
 
-    [[nodiscard]] inline bool operator==(const INetSocketAddress& rhs) const noexcept {
+    [[nodiscard]] constexpr bool operator==(const INetSocketAddress& rhs) const noexcept {
         return address == rhs.address && port == rhs.port;
     }
 

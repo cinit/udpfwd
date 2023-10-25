@@ -3,6 +3,7 @@
 //
 
 #include "INetAddress.h"
+#include <string>
 
 #include <arpa/inet.h>
 #include "fmt/format.h"
@@ -14,7 +15,7 @@ INetAddress INetAddress::FromString(std::string_view address) {
     if (address.find(':') == std::string_view::npos) {
         // ipv4
         INetAddress addr;
-        if (inet_pton(AF_INET, address.data(), &addr.mAddr4) == 1) {
+        if (inet_pton(AF_INET, std::string(address).c_str(), &addr.mAddr4) == 1) {
             addr.mType = INetType::kIpv4;
             return addr;
         }
@@ -26,7 +27,7 @@ INetAddress INetAddress::FromString(std::string_view address) {
             address.remove_suffix(1);
         }
         INetAddress addr;
-        if (inet_pton(AF_INET6, address.data(), addr.mAddr6.data()) == 1) {
+        if (inet_pton(AF_INET6, std::string(address).c_str(), addr.mAddr6.data()) == 1) {
             addr.mType = INetType::kIpv6;
             return addr;
         }
@@ -41,7 +42,6 @@ std::string INetAddress::ToString() const {
         inet_ntop(AF_INET, &mAddr4, buf.data(), buf.size());
         return buf.data();
     } else if (IsIpv6()) {
-
         inet_ntop(AF_INET6, mAddr6.data(), buf.data(), buf.size());
         return buf.data();
     } else {

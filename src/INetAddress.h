@@ -36,9 +36,9 @@ private:
 
 public:
 
-    INetAddress() noexcept = default;
+    constexpr INetAddress() noexcept = default;
 
-    INetAddress(INetType type, std::span<const uint8_t> addr) noexcept {
+    constexpr INetAddress(INetType type, std::span<const uint8_t> addr) noexcept {
         if (type == INetType::kIpv4 && addr.size() == 4) {
             mType = type;
             mAddr4 = {addr[0], addr[1], addr[2], addr[3]};
@@ -51,35 +51,35 @@ public:
         }
     }
 
-    explicit INetAddress(std::span<const uint8_t, 4> addr) noexcept
+    explicit constexpr INetAddress(std::span<const uint8_t, 4> addr) noexcept
             : mType(INetType::kIpv4), mAddr4{addr[0], addr[1], addr[2], addr[3]} {}
 
-    explicit INetAddress(std::span<const uint8_t, 16> addr) noexcept
+    explicit constexpr INetAddress(std::span<const uint8_t, 16> addr) noexcept
             : mType(INetType::kIpv6),
               mAddr6{addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], addr[7],
                      addr[8], addr[9], addr[10], addr[11], addr[12], addr[13], addr[14], addr[15]} {}
 
-    INetAddress(const INetAddress&) noexcept = default;
+    constexpr INetAddress(const INetAddress&) noexcept = default;
 
-    INetAddress& operator=(const INetAddress&) noexcept = default;
+    constexpr INetAddress& operator=(const INetAddress&) noexcept = default;
 
     [[nodiscard]] static INetAddress FromString(std::string_view address);
 
-    [[nodiscard]] inline bool IsIpv4() const noexcept {
+    [[nodiscard]] constexpr bool IsIpv4() const noexcept {
         return mType == INetType::kIpv4;
     }
 
-    [[nodiscard]] inline bool IsIpv6() const noexcept {
+    [[nodiscard]] constexpr bool IsIpv6() const noexcept {
         return mType == INetType::kIpv6;
     }
 
-    [[nodiscard]] inline bool IsValid() const noexcept {
+    [[nodiscard]] constexpr bool IsValid() const noexcept {
         return IsIpv4() || IsIpv6();
     }
 
     [[nodiscard]] std::string ToString() const;
 
-    [[nodiscard]] std::span<const uint8_t> GetBytes() const noexcept {
+    [[nodiscard]] constexpr std::span<const uint8_t> GetBytes() const noexcept {
         if (IsIpv4()) {
             return {mAddr4.data(), mAddr4.size()};
         } else if (IsIpv6()) {
@@ -88,19 +88,19 @@ public:
         return {};
     }
 
-    [[nodiscard]] inline uint32_t GetIpv4() const noexcept {
+    [[nodiscard]] constexpr uint32_t GetIpv4() const noexcept {
         return mAddr4AsBigEndian;
     }
 
-    [[nodiscard]] inline std::array<uint8_t, 16> GetIpv6() const noexcept {
+    [[nodiscard]] constexpr std::array<uint8_t, 16> GetIpv6() const noexcept {
         return mAddr6;
     }
 
-    [[nodiscard]] inline INetType GetType() const noexcept {
+    [[nodiscard]] constexpr INetType GetType() const noexcept {
         return mType;
     }
 
-    [[nodiscard]] inline bool operator==(const INetAddress& other) const noexcept {
+    [[nodiscard]] constexpr bool operator==(const INetAddress& other) const noexcept {
         if (mType != other.mType) {
             return false;
         }
@@ -114,7 +114,21 @@ public:
 
 };
 
-}
+namespace constants {
+
+static constexpr auto IPV4_ANY =
+        INetAddress(INetAddress::INetType::kIpv4, std::array<uint8_t, 4>{0, 0, 0, 0});
+static constexpr auto IPV4_LOOPBACK =
+        INetAddress(INetAddress::INetType::kIpv4, std::array<uint8_t, 4>{127, 0, 0, 1});
+static constexpr auto IPV6_ANY =
+        INetAddress(INetAddress::INetType::kIpv6, std::array<uint8_t, 16>{});
+static constexpr auto IPV6_LOOPBACK =
+        INetAddress(INetAddress::INetType::kIpv6, std::array<uint8_t, 16>
+                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1});
+
+} // namespace constants
+
+} // namespace net
 
 // fmt helper
 

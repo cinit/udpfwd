@@ -14,7 +14,6 @@
 static constexpr auto LOG_TAG = "main";
 
 int main(int argc, char* argv[]) {
-    using namespace udpfwd;
     if (argc < 2) {
         LOGE("Too few arguments");
         LOGE("Usage for udpfwd:");
@@ -29,13 +28,13 @@ int main(int argc, char* argv[]) {
             LOGE("Unexpected number of arguments, run command with no arguments for usage");
             return 1;
         }
-        return RunUdpForwarder(argv[2]);
+        return udpfwd::RunUdpForwarder(argv[2]);
     } else if (argv[1] == std::string_view("-r")) {
         if (argc != 4) {
             LOGE("Unexpected number of arguments, run command with no arguments for usage");
             return 1;
         }
-        return RunWgcfRelay(argv[2], argv[3]);
+        return wgrelay::RunWgcfRelay(argv[2], argv[3]);
     } else {
         LOGE("Unknown command: {}", argv[1]);
         LOGE("Run command with no arguments for usage");

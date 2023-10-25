@@ -7,7 +7,7 @@
 
 #include <string>
 
-namespace udpfwd {
+namespace wgrelay {
 
 int RunWgcfRelay(std::string listenAddress, std::string forwardAddress);
 
