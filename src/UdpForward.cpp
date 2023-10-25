@@ -19,7 +19,7 @@ namespace udpfwd {
 
 using platform::GetErrorMsg;
 
-int RunUdpForwarder(std::string configFilePath) {
+int RunUdpForwarder(std::string_view configFilePath) {
     using namespace platform::io;
     using namespace platform::io::sizesuffix;
     using namespace support::text;

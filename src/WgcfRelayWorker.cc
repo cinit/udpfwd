@@ -20,12 +20,18 @@
 #include "platform/ErrnoRestorer.h"
 #include "SocketAddressUtils.h"
 #include "WireGuardPacketStruct.h"
+#include "DebugConfig.h"
 
 static constexpr auto LOG_TAG = "WgcfRelay";
 
-namespace wgrelay {
+#define DLOGV(fmt, ...) \
+    do { \
+        if (::debugconfig::IsDebug()) [[unlikely]] { \
+            LOGV(fmt, ##__VA_ARGS__); \
+        } \
+    } while (false);
 
-static bool kDebug = false;
+namespace wgrelay {
 
 using SocketHandle = int; // file descriptor
 
@@ -137,10 +143,8 @@ void HandlePacketFromServer(WgcfRelayContext& context, std::span<const uint8_t> 
     }
     // update session info
     session.lastRxTimestampSeconds = platform::time::CurrentTimeSeconds();
-    if (kDebug) {
-        LOGV("Session 0x{:x} forwarded {} bytes from server {} to client {}",
-             sessionId, packet.size(), context.destinationAddress, clientAddress);
-    }
+    DLOGV("Session 0x{:x} forwarded {} bytes from server {} to client {}",
+          sessionId, packet.size(), context.destinationAddress, clientAddress);
 }
 
 auto NewOutboundUdpSocket(net::INetAddress::INetType type) {
@@ -257,10 +261,8 @@ void HandlePacketFromClient(WgcfRelayContext& context, std::span<const uint8_t> 
     }
     // update session info
     session.lastTxTimestampSeconds = CurrentTimeSeconds();
-    if (kDebug) {
-        LOGV("Session 0x{:x} forwarded {} bytes from client {} to server {}",
-             sessionId, packet.size(), fromAddress, context.destinationAddress);
-    }
+    DLOGV("Session 0x{:x} forwarded {} bytes from client {} to server {}",
+          sessionId, packet.size(), fromAddress, context.destinationAddress);
 }
 
 int RunWorker(WgcfRelayContext& context) {

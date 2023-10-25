@@ -32,7 +32,7 @@ target_compile_definitions(fmt-header-only INTERFACE FMT_STATIC_THOUSANDS_SEPARA
 
 add_executable(udpfwd src/platform/log/Log.cpp src/support/text/TextUtils.cc src/support/text/ParseNumber.cc
         src/platform/Time.cpp src/INetAddress.cc src/INetSocketAddress.cc src/platform/IoUtils.cc src/platform/ErrorMsg.cc
-        src/UdpForwardWorker.cc src/UdpForward.cpp src/WgcfRelay.cc src/WgcfRelayWorker.cc src/Main.cc
+        src/UdpForwardWorker.cc src/UdpForward.cpp src/WgcfRelay.cc src/WgcfRelayWorker.cc src/Main.cc src/DebugConfig.cc
 )
 
 target_include_directories(udpfwd PRIVATE src)

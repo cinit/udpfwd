@@ -9,7 +9,7 @@
 
 namespace udpfwd {
 
-int RunUdpForwarder(std::string configFilePath);
+int RunUdpForwarder(std::string_view configFilePath);
 
 }
 

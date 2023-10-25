@@ -9,7 +9,7 @@
 
 namespace wgrelay {
 
-int RunWgcfRelay(std::string listenAddress, std::string forwardAddress);
+int RunWgcfRelay(std::string_view listenAddress, std::string_view forwardAddress);
 
 }
 

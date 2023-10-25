@@ -16,12 +16,18 @@
 #include "platform/log/Log.h"
 #include "platform/ErrnoRestorer.h"
 #include "SocketAddressUtils.h"
+#include "DebugConfig.h"
 
 static constexpr auto LOG_TAG = "UdpForwardWorker";
 
-namespace udpfwd {
+#define DLOGV(fmt, ...) \
+    do { \
+        if (::debugconfig::IsDebug()) [[unlikely]] { \
+            LOGV(fmt, ##__VA_ARGS__); \
+        } \
+    } while (false);
 
-static bool kDebug = false;
+namespace udpfwd {
 
 
 int SetupSockets(UdpForwardContext& context, std::vector<UdpForwardTargetInfo> targets) {
@@ -184,10 +190,8 @@ int RunWorker(UdpForwardContext& context) {
                         LOGW("sendto {} failed: {}", session.outboundSocketAddress, strerror(errno));
                         continue;
                     }
-                    if (kDebug) {
-                        LOGV("Forwarded {} bytes from {} to {}",
-                             packetSize, session.sourceAddress, session.destinationAddress);
-                    }
+                    DLOGV("Forwarded {} bytes from {} to {}",
+                          packetSize, session.sourceAddress, session.destinationAddress);
                 } else {
                     // forward to source
                     if (fromAddress != session.destinationAddress) {
@@ -214,10 +218,8 @@ int RunWorker(UdpForwardContext& context) {
                         LOGW("sendto {} failed: {}", session.inboundSocketAddress, strerror(errno));
                         continue;
                     }
-                    if (kDebug) {
-                        LOGV("Forwarded {} bytes from {} to {}",
-                             packetSize, session.destinationAddress, session.sourceAddress);
-                    }
+                    DLOGV("Forwarded {} bytes from {} to {}",
+                          packetSize, session.destinationAddress, session.sourceAddress);
                 }
             }
         }

@@ -23,7 +23,7 @@ namespace wgrelay {
 
 using platform::GetErrorMsg;
 
-int RunWgcfRelay(std::string listenAddressString, std::string forwardAddressString) {
+int RunWgcfRelay(std::string_view listenAddressString, std::string_view forwardAddressString) {
     using net::INetSocketAddress;
     using net::INetAddress;
     using namespace support::text;
