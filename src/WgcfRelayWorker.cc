@@ -29,7 +29,7 @@ static constexpr auto LOG_TAG = "WgcfRelay";
         if (::debugconfig::IsDebug()) [[unlikely]] { \
             LOGV(fmt, ##__VA_ARGS__); \
         } \
-    } while (false);
+    } while (false)
 
 namespace wgrelay {
 
@@ -137,8 +137,12 @@ void HandlePacketFromServer(WgcfRelayContext& context, std::span<const uint8_t> 
     }
     ssize_t sentSize = SendUdpPacket(context.inboundSocket, packet, clientAddress);
     if (sentSize < 0) {
-        ErrnoRestorer err;
-        LOGW("Session 0x{:x} sendto client {} failed: {}", sessionId, clientAddress, strerror(-sentSize));
+        if (sentSize == -EAGAIN) {
+            // dropped RX ++
+            session.droppedRxSinceLastReport++;
+        } else {
+            LOGW("Session 0x{:x} sendto client {} failed: {}", sessionId, clientAddress, strerror(-sentSize));
+        }
         return;
     }
     // update session info
@@ -255,8 +259,13 @@ void HandlePacketFromClient(WgcfRelayContext& context, std::span<const uint8_t> 
     // forward packet to server
     ssize_t sentSize = SendUdpPacket(session.outboundSocket, packet, context.destinationAddress);
     if (sentSize < 0) {
-        LOGW("Session 0x{:x} sendto server {} size {} failed: {}",
-             sessionId, context.destinationAddress, packet.size(), strerror(-sentSize));
+        if (sentSize == -EAGAIN) {
+            // dropped TX ++
+            session.droppedTxSinceLastReport++;
+        } else {
+            LOGW("Session 0x{:x} sendto server {} size {} failed: {}",
+                 sessionId, context.destinationAddress, packet.size(), strerror(-sentSize));
+        }
         return;
     }
     // update session info
@@ -271,7 +280,7 @@ int RunWorker(WgcfRelayContext& context) {
     std::vector<epoll_event> events(16);
     std::array<uint8_t, 65536> packetBuffer = {};
     while (true) {
-        int numEvents = epoll_wait(context.epollHandle, events.data(), (int) events.size(), 1000);
+        int numEvents = epoll_wait(context.epollHandle, events.data(), (int) events.size(), 100);
         if (numEvents < 0) {
             if (errno != EINTR) {
                 ErrnoRestorer err;
@@ -281,12 +290,25 @@ int RunWorker(WgcfRelayContext& context) {
         }
         if (numEvents <= 0) {
             uint64_t nowSec = CurrentTimeSeconds();
+            // report dropped packets if any
             // check for expired sessions, eg > 10 min
             for (auto it = context.sessions.begin(); it != context.sessions.end();) {
+                if (it->second.droppedRxSinceLastReport != 0 || it->second.droppedTxSinceLastReport != 0) {
+                    auto& session = it->second;
+                    LOGI("Session 0x{:x} client {} outbound {} has {} dropped rx, {} dropped tx",
+                         session.sessionId, session.sourceAddress, session.outboundSocketAddress,
+                         session.droppedRxSinceLastReport, session.droppedTxSinceLastReport);
+                    // reset counter
+                    session.droppedRxSinceLastReport = 0;
+                    session.droppedTxSinceLastReport = 0;
+                }
                 if ((nowSec - it->second.lastRxTimestampSeconds > 600) ||
                     (nowSec - it->second.lastTxTimestampSeconds > 600)) {
-                    LOGD("Session 0x{:x} (last source {} outbound {}) expired, dropping",
-                         it->second.sessionId, it->second.sourceAddress, it->second.outboundSocketAddress);
+                    auto lastTxRel = int64_t(it->second.lastTxTimestampSeconds) - int64_t(nowSec);
+                    auto lastRxRel = int64_t(it->second.lastRxTimestampSeconds) - int64_t(nowSec);
+                    LOGD("Session 0x{:x} (last source {} outbound {}) expired, last tx {}s, last rx {}s",
+                         it->second.sessionId, it->second.sourceAddress, it->second.outboundSocketAddress,
+                         lastTxRel, lastRxRel);
                     int sock = it->second.outboundSocket;
                     if (sock >= 0) {
                         // remove from epoll

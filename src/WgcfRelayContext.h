@@ -29,6 +29,8 @@ public:
     SocketHandle outboundSocket = -1;
     uint64_t lastTxTimestampSeconds = 0;
     uint64_t lastRxTimestampSeconds = 0;
+    uint32_t droppedTxSinceLastReport = 0;
+    uint32_t droppedRxSinceLastReport = 0;
     net::INetSocketAddress outboundSocketAddress; // fixed
     net::INetSocketAddress sourceAddress; // dynamic
 };
