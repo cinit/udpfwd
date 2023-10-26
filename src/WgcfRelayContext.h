@@ -33,6 +33,36 @@ public:
     uint32_t droppedRxSinceLastReport = 0;
     net::INetSocketAddress outboundSocketAddress; // fixed
     net::INetSocketAddress sourceAddress; // dynamic
+
+    constexpr WgcfRelaySession() noexcept = default;
+
+    constexpr WgcfRelaySession(uint64_t sessionId, uint32_t wireguardReserved,
+                               uint32_t clientPeerId, uint32_t serverPeerId,
+                               SocketHandle outboundSocket,
+                               net::INetSocketAddress outboundSocketAddress,
+                               net::INetSocketAddress sourceAddress,
+                               uint64_t lastTxTimestampSeconds = 0,
+                               uint64_t lastRxTimestampSeconds = 0) noexcept
+            : sessionId(sessionId),
+              wireguardReserved(wireguardReserved),
+              clientPeerId(clientPeerId),
+              serverPeerId(serverPeerId),
+              outboundSocket(outboundSocket),
+              lastTxTimestampSeconds(lastTxTimestampSeconds),
+              lastRxTimestampSeconds(lastRxTimestampSeconds),
+              outboundSocketAddress(outboundSocketAddress),
+              sourceAddress(sourceAddress) {}
+
+    // disable copy and move to prevent accidental copies
+    WgcfRelaySession(const WgcfRelaySession&) = delete;
+
+    WgcfRelaySession& operator=(const WgcfRelaySession&) = delete;
+
+    // allow move
+    WgcfRelaySession(WgcfRelaySession&&) = default;
+
+    WgcfRelaySession& operator=(WgcfRelaySession&&) = default;
+
 };
 
 class WgcfRelayContext {

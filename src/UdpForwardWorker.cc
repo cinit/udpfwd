@@ -87,13 +87,8 @@ int SetupSockets(UdpForwardContext& context, std::vector<UdpForwardTargetInfo> t
             LOGE("epoll_ctl add outbound socket {} failed: {}", target.outbound, strerror(errno));
             return -int(err);
         }
-        context.sessions.emplace_back(UdpForwardSession{
-                .inboundSocketAddress = target.inbound,
-                .outboundSocketAddress = target.outbound,
-                .destinationAddress = target.destination,
-                .inboundSocket = inboundSocket,
-                .outboundSocket = outboundSocket,
-        });
+        context.sessions.emplace_back(target.inbound, target.outbound,
+                                      target.destination, inboundSocket, outboundSocket);
         context.fileDescriptorToSessionIndex.emplace(inboundSocket, i);
         context.fileDescriptorToSessionIndex.emplace(outboundSocket, i);
     }

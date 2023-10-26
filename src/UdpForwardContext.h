@@ -25,13 +25,38 @@ struct UdpForwardTargetInfo {
     net::INetSocketAddress destination;
 };
 
-struct UdpForwardSession {
+class UdpForwardSession {
+public:
     net::INetSocketAddress inboundSocketAddress; // fixed
     net::INetSocketAddress outboundSocketAddress; // fixed
     net::INetSocketAddress sourceAddress; // dynamic
     net::INetSocketAddress destinationAddress; // fixed
     SocketHandle inboundSocket = -1;
     SocketHandle outboundSocket = -1;
+
+    constexpr UdpForwardSession() noexcept = default;
+
+    constexpr UdpForwardSession(net::INetSocketAddress inboundSocketAddress,
+                                net::INetSocketAddress outboundSocketAddress,
+                                net::INetSocketAddress destinationAddress,
+                                SocketHandle inboundSocket,
+                                SocketHandle outboundSocket) noexcept
+            : inboundSocketAddress(inboundSocketAddress),
+              outboundSocketAddress(outboundSocketAddress),
+              destinationAddress(destinationAddress),
+              inboundSocket(inboundSocket),
+              outboundSocket(outboundSocket) {}
+
+    // disable copy and move to prevent accidental copies
+    UdpForwardSession(const UdpForwardSession&) = delete;
+
+    UdpForwardSession& operator=(const UdpForwardSession&) = delete;
+
+    // allow move
+    UdpForwardSession(UdpForwardSession&&) = default;
+
+    UdpForwardSession& operator=(UdpForwardSession&&) = default;
+
 };
 
 class UdpForwardContext {

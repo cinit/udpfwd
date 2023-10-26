@@ -135,7 +135,7 @@ void HandlePacketFromServer(WgcfRelayContext& context, std::span<const uint8_t> 
         LOGW("Unknown session id {} from server", PrettySessionId(sessionId));
         return;
     }
-    auto session = it->second;
+    auto& session = it->second;
     auto clientAddress = session.sourceAddress;
     // forward packet to client
     // check whether source addr exists
@@ -233,25 +233,16 @@ void HandlePacketFromClient(WgcfRelayContext& context, std::span<const uint8_t> 
             close(outboundSocketResult.result);
             return;
         }
+        auto now = CurrentTimeSeconds();
         auto outboundSocket = outboundSocketResult.result;
         auto outboundPort = outboundSocketResult.port;
-        auto&& session = WgcfRelaySession{
-                .sessionId = sessionId,
-                .wireguardReserved = reservedValue,
-                .clientPeerId = 0, // wip, not supported yet
-                .serverPeerId = 0, // wip, not supported yet
-                .outboundSocket = outboundSocket,
-                .lastTxTimestampSeconds = CurrentTimeSeconds(),
-                .lastRxTimestampSeconds = CurrentTimeSeconds(),
-                .outboundSocketAddress = INetSocketAddress(
-                        (context.destinationAddress.address.GetType() == INetType::kIpv4) ? IPV4_ANY : IPV6_ANY,
-                        outboundPort),
-                .sourceAddress = fromAddress,
-        };
-        context.sessions.try_emplace(sessionId, session);
+        auto outboundAddress = INetSocketAddress((context.destinationAddress.address.GetType() == INetType::kIpv4)
+                                                 ? IPV4_ANY : IPV6_ANY, outboundPort);
+        context.sessions.try_emplace(sessionId, sessionId, reservedValue, 0, 0,
+                                     outboundSocket, outboundAddress, fromAddress, now, now);
         context.fileDescriptorToSessionIdMap.emplace(outboundSocket, sessionId);
         LOGI("New session {} created for client {} with outbound {} to server {}",
-             PrettySessionId(sessionId), fromAddress, session.outboundSocketAddress, context.destinationAddress);
+             PrettySessionId(sessionId), fromAddress, outboundAddress, context.destinationAddress);
     }
     // now we must have session
     it = context.sessions.find(sessionId);
