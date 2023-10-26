@@ -40,6 +40,14 @@ uint64_t GenerateSessionId() {
     return uint64_t(1u) << 32u | uint64_t(sNext.fetch_add(1, std::memory_order_relaxed));
 }
 
+std::string PrettySessionId(uint64_t sessionId) {
+    if (sessionId >> 32u == 0x2u) [[likely]] {
+        return fmt::format("r.{:06x}", sessionId & 0xffffffffu);
+    } else {
+        return fmt::format("0x{:x}", sessionId);
+    }
+}
+
 int SetupSockets(WgcfRelayContext& context, net::INetSocketAddress listenAddr, net::INetSocketAddress forwardAddr) {
     using platform::ErrnoRestorer;
     context.inboundSocketAddress = listenAddr;
@@ -124,7 +132,7 @@ void HandlePacketFromServer(WgcfRelayContext& context, std::span<const uint8_t> 
     using platform::ErrnoRestorer;
     auto it = context.sessions.find(sessionId);
     if (it == context.sessions.end()) {
-        LOGW("Unknown session id {:x} from server", sessionId);
+        LOGW("Unknown session id {} from server", PrettySessionId(sessionId));
         return;
     }
     auto session = it->second;
@@ -132,7 +140,7 @@ void HandlePacketFromServer(WgcfRelayContext& context, std::span<const uint8_t> 
     // forward packet to client
     // check whether source addr exists
     if (!session.sourceAddress.IsValid()) {
-        LOGD("Source address for session 0x{:x} is invalid, dropping packet", sessionId);
+        LOGD("Source address for session {} is invalid, dropping packet", PrettySessionId(sessionId));
         return;
     }
     ssize_t sentSize = SendUdpPacket(context.inboundSocket, packet, clientAddress);
@@ -141,14 +149,15 @@ void HandlePacketFromServer(WgcfRelayContext& context, std::span<const uint8_t> 
             // dropped RX ++
             session.droppedRxSinceLastReport++;
         } else {
-            LOGW("Session 0x{:x} sendto client {} failed: {}", sessionId, clientAddress, strerror(-sentSize));
+            LOGW("Session {} sendto client {} failed: {}", PrettySessionId(sessionId), clientAddress,
+                 strerror(-sentSize));
         }
         return;
     }
     // update session info
     session.lastRxTimestampSeconds = platform::time::CurrentTimeSeconds();
-    DLOGV("Session 0x{:x} forwarded {} bytes from server {} to client {}",
-          sessionId, packet.size(), context.destinationAddress, clientAddress);
+    DLOGV("Session {} forwarded {} bytes from server {} to client {}",
+          PrettySessionId(sessionId), packet.size(), context.destinationAddress, clientAddress);
 }
 
 auto NewOutboundUdpSocket(net::INetAddress::INetType type) {
@@ -211,7 +220,7 @@ void HandlePacketFromClient(WgcfRelayContext& context, std::span<const uint8_t> 
         // create new session
         auto outboundSocketResult = NewOutboundUdpSocket(context.destinationAddress.address.GetType());
         if (outboundSocketResult.result < 0) {
-            LOGE("Failed to create outbound socket for session {:x}", sessionId);
+            LOGE("Failed to create outbound socket for session {}", PrettySessionId(sessionId));
             return;
         }
         // add to epoll
@@ -241,19 +250,19 @@ void HandlePacketFromClient(WgcfRelayContext& context, std::span<const uint8_t> 
         };
         context.sessions.try_emplace(sessionId, session);
         context.fileDescriptorToSessionIdMap.emplace(outboundSocket, sessionId);
-        LOGI("New session 0x{:x} created for client {} with outbound {} to server {}",
-             sessionId, fromAddress, session.outboundSocketAddress, context.destinationAddress);
+        LOGI("New session {} created for client {} with outbound {} to server {}",
+             PrettySessionId(sessionId), fromAddress, session.outboundSocketAddress, context.destinationAddress);
     }
     // now we must have session
     it = context.sessions.find(sessionId);
     if (it == context.sessions.end()) {
-        LOGE("Session 0x{:x} not found after creation, race condition?", sessionId);
+        LOGE("Session {} not found after creation, race condition?", PrettySessionId(sessionId));
         return;
     }
     auto& session = it->second;
     if (session.sourceAddress != fromAddress) {
-        LOGI("Session 0x{:x} (outbound {}) source address changed from {} to {}",
-             sessionId, session.outboundSocketAddress, session.sourceAddress, fromAddress);
+        LOGI("Session {} (outbound {}) source address changed from {} to {}",
+             PrettySessionId(sessionId), session.outboundSocketAddress, session.sourceAddress, fromAddress);
         session.sourceAddress = fromAddress;
     }
     // forward packet to server
@@ -263,15 +272,15 @@ void HandlePacketFromClient(WgcfRelayContext& context, std::span<const uint8_t> 
             // dropped TX ++
             session.droppedTxSinceLastReport++;
         } else {
-            LOGW("Session 0x{:x} sendto server {} size {} failed: {}",
-                 sessionId, context.destinationAddress, packet.size(), strerror(-sentSize));
+            LOGW("Session {} sendto server {} size {} failed: {}",
+                 PrettySessionId(sessionId), context.destinationAddress, packet.size(), strerror(-sentSize));
         }
         return;
     }
     // update session info
     session.lastTxTimestampSeconds = CurrentTimeSeconds();
-    DLOGV("Session 0x{:x} forwarded {} bytes from client {} to server {}",
-          sessionId, packet.size(), fromAddress, context.destinationAddress);
+    DLOGV("Session {} forwarded {} bytes from client {} to server {}",
+          PrettySessionId(sessionId), packet.size(), fromAddress, context.destinationAddress);
 }
 
 int RunWorker(WgcfRelayContext& context) {
@@ -295,8 +304,8 @@ int RunWorker(WgcfRelayContext& context) {
             for (auto it = context.sessions.begin(); it != context.sessions.end();) {
                 if (it->second.droppedRxSinceLastReport != 0 || it->second.droppedTxSinceLastReport != 0) {
                     auto& session = it->second;
-                    LOGI("Session 0x{:x} client {} outbound {} has {} dropped rx, {} dropped tx",
-                         session.sessionId, session.sourceAddress, session.outboundSocketAddress,
+                    LOGI("Session {} client {} outbound {} has {} dropped rx, {} dropped tx",
+                         PrettySessionId(session.sessionId), session.sourceAddress, session.outboundSocketAddress,
                          session.droppedRxSinceLastReport, session.droppedTxSinceLastReport);
                     // reset counter
                     session.droppedRxSinceLastReport = 0;
@@ -306,9 +315,9 @@ int RunWorker(WgcfRelayContext& context) {
                     (nowSec - it->second.lastTxTimestampSeconds > 600)) {
                     auto lastTxRel = int64_t(it->second.lastTxTimestampSeconds) - int64_t(nowSec);
                     auto lastRxRel = int64_t(it->second.lastRxTimestampSeconds) - int64_t(nowSec);
-                    LOGD("Session 0x{:x} (last source {} outbound {}) expired, last tx {}s, last rx {}s",
-                         it->second.sessionId, it->second.sourceAddress, it->second.outboundSocketAddress,
-                         lastTxRel, lastRxRel);
+                    LOGD("Session {} (last source {} outbound {}) expired, last tx {}s, last rx {}s",
+                         PrettySessionId(it->second.sessionId), it->second.sourceAddress,
+                         it->second.outboundSocketAddress, lastTxRel, lastRxRel);
                     int sock = it->second.outboundSocket;
                     if (sock >= 0) {
                         // remove from epoll
