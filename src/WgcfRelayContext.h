@@ -31,6 +31,8 @@ public:
     uint64_t lastRxTimestampSeconds = 0;
     uint32_t droppedTxSinceLastReport = 0;
     uint32_t droppedRxSinceLastReport = 0;
+    uint32_t totalTxPacketsSinceLastReport = 0;
+    uint32_t totalRxPacketsSinceLastReport = 0;
     net::INetSocketAddress outboundSocketAddress; // fixed
     net::INetSocketAddress sourceAddress; // dynamic
 

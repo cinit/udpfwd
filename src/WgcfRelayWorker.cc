@@ -143,6 +143,7 @@ void HandlePacketFromServer(WgcfRelayContext& context, std::span<const uint8_t> 
         LOGD("Source address for session {} is invalid, dropping packet", PrettySessionId(sessionId));
         return;
     }
+    session.totalRxPacketsSinceLastReport++;
     ssize_t sentSize = SendUdpPacket(context.inboundSocket, packet, clientAddress);
     if (sentSize < 0) {
         if (sentSize == -EAGAIN) {
@@ -256,6 +257,7 @@ void HandlePacketFromClient(WgcfRelayContext& context, std::span<const uint8_t> 
              PrettySessionId(sessionId), session.outboundSocketAddress, session.sourceAddress, fromAddress);
         session.sourceAddress = fromAddress;
     }
+    session.totalTxPacketsSinceLastReport++;
     // forward packet to server
     ssize_t sentSize = SendUdpPacket(session.outboundSocket, packet, context.destinationAddress);
     if (sentSize < 0) {
@@ -295,12 +297,18 @@ int RunWorker(WgcfRelayContext& context) {
             for (auto it = context.sessions.begin(); it != context.sessions.end();) {
                 if (it->second.droppedRxSinceLastReport != 0 || it->second.droppedTxSinceLastReport != 0) {
                     auto& session = it->second;
-                    LOGI("Session {} client {} outbound {} has {} dropped rx, {} dropped tx",
+                    float rxLossPct = 100.0f * float(session.droppedRxSinceLastReport) /
+                                      float(std::max(session.totalRxPacketsSinceLastReport, 1u));
+                    float txLossPct = 100.0f * float(session.droppedTxSinceLastReport) /
+                                      float(std::max(session.totalTxPacketsSinceLastReport, 1u));
+                    LOGI("Session {} client {} outbound {} has {} ({:.4f}%) dropped RX, {} ({:.4f}%) dropped TX",
                          PrettySessionId(session.sessionId), session.sourceAddress, session.outboundSocketAddress,
-                         session.droppedRxSinceLastReport, session.droppedTxSinceLastReport);
-                    // reset counter
+                         session.droppedRxSinceLastReport, rxLossPct, session.droppedTxSinceLastReport, txLossPct);
+                    // reset counters
                     session.droppedRxSinceLastReport = 0;
                     session.droppedTxSinceLastReport = 0;
+                    session.totalRxPacketsSinceLastReport = 0;
+                    session.totalTxPacketsSinceLastReport = 0;
                 }
                 if ((nowSec - it->second.lastRxTimestampSeconds > 600) ||
                     (nowSec - it->second.lastTxTimestampSeconds > 600)) {

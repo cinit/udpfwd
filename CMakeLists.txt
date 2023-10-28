@@ -28,7 +28,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer")
 
 add_subdirectory(libs/fmt fmt)
 
-target_compile_definitions(fmt-header-only INTERFACE FMT_STATIC_THOUSANDS_SEPARATOR=1 FMT_USE_FLOAT=0 FMT_USE_DOUBLE=0 FMT_USE_LONG_DOUBLE=0)
+target_compile_definitions(fmt-header-only INTERFACE FMT_STATIC_THOUSANDS_SEPARATOR=1)
 
 add_executable(udpfwd src/platform/log/Log.cpp src/support/text/TextUtils.cc src/support/text/ParseNumber.cc
         src/platform/Time.cpp src/INetAddress.cc src/INetSocketAddress.cc src/platform/IoUtils.cc src/platform/ErrorMsg.cc
