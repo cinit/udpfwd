@@ -70,6 +70,70 @@ This project is only compatible with WireGuard with a none-zero reserved field. 
 traffic,
 see the usage for more details.
 
+It's probably not a good idea to use this project on your VPS, because almost all VPS use IP addresses that are intended
+for data centers, and these IP addresses are typically considered as "bad/risky". Therefore, it's very likely that you
+will encounter a lot of CAPTCHAs (Cloudflare Turnstile) when you access websites through your relay server.
+
+Even the following command will trigger CAPTCHA:
+
+```shell
+# This is a public IP-echoing service.
+curl ip.sb
+```
+
+It fails with a 403 response:
+
+```html
+<!DOCTYPE html>
+<html lang="en-US">
+<head><title>Just a moment...</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link href="/cdn-cgi/styles/challenges.css" rel="stylesheet">
+</head>
+<body class="no-js">
+<div class="main-wrapper" role="main">
+    <div class="main-content">
+        <noscript>
+            <div id="challenge-error-title">
+                <div class="h2"><span class="icon-wrapper"><div class="heading-icon warning-icon"></div></span><span
+                        id="challenge-error-text">Enable JavaScript and cookies to continue</span></div>
+            </div>
+        </noscript>
+    </div>
+</div>
+<script>(function () {
+    window._cf_chl_opt = {
+        cvId: '2',
+        cZone: "ip.sb",
+        cType: 'managed',
+        cNounce: 'REDACTED',
+        cRay: 'REDACTED',
+        cHash: 'REDACTED',
+        // more...
+        cUPMDTk: "\/?__cf_chl_tk=REDACTED"
+    };
+    var cpo = document.createElement('script');
+    cpo.src = '/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1?ray=REDACTED';
+    window._cf_chl_opt.cOgUHash = location.hash === '' && location.href.indexOf('#') !== -1 ? '#' : location.hash;
+    window._cf_chl_opt.cOgUQuery = location.search === '' && location.href.slice(0, location.href.length - window._cf_chl_opt.cOgUHash.length).indexOf('?') !== -1 ? '?' : location.search;
+    if (window.history && window.history.replaceState) {
+        var ogU = location.pathname + window._cf_chl_opt.cOgUQuery + window._cf_chl_opt.cOgUHash;
+        history.replaceState(null, null, "\/?__cf_chl_rt_tk=REDACTED" + window._cf_chl_opt.cOgUHash);
+        cpo.onload = function () {
+            history.replaceState(null, null, ogU);
+        }
+    }
+    document.getElementsByTagName('head')[0].appendChild(cpo);
+}());</script>
+</body>
+</html>
+```
+
+You don't want to solve CAPTCHA every time you access a website, do you?
+
 ## Disclaimer
 
 This project is just a Proof of Concept. It's neither production-ready nor well-tested. Use it at your own risk.
