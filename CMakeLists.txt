@@ -30,9 +30,10 @@ add_subdirectory(libs/fmt fmt)
 
 target_compile_definitions(fmt-header-only INTERFACE FMT_STATIC_THOUSANDS_SEPARATOR=1)
 
-add_executable(udpfwd src/platform/log/Log.cpp src/support/text/TextUtils.cc src/support/text/ParseNumber.cc
-        src/platform/Time.cpp src/INetAddress.cc src/INetSocketAddress.cc src/platform/IoUtils.cc src/platform/ErrorMsg.cc
-        src/UdpForwardWorker.cc src/UdpForward.cpp src/WgcfRelay.cc src/WgcfRelayWorker.cc src/Main.cc src/DebugConfig.cc
+add_executable(udpfwd src/platform/log/Log.cpp src/support/text/TextUtils.cc src/support/text/ParseNumber.cc src/platform/Runtime.cc
+        src/platform/Time.cpp src/common/INetAddress.cc src/common/INetSocketAddress.cc src/platform/IoUtils.cc src/platform/ErrorMsg.cc
+        src/udpfwd/UdpForwardWorker.cc src/udpfwd/UdpForward.cpp src/wgcf/WgcfRelay.cc src/wgcf/WgcfRelayWorker.cc
+        src/common/Main.cc src/common/DebugConfig.cc
 )
 
 target_include_directories(udpfwd PRIVATE src)
