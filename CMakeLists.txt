@@ -34,6 +34,8 @@ add_executable(udpfwd src/platform/log/Log.cpp src/support/text/TextUtils.cc src
         src/platform/Time.cpp src/common/INetAddress.cc src/common/INetSocketAddress.cc src/platform/IoUtils.cc src/platform/ErrorMsg.cc
         src/udpfwd/UdpForwardWorker.cc src/udpfwd/UdpForward.cpp src/wgcf/WgcfRelay.cc src/wgcf/WgcfRelayWorker.cc
         src/common/Main.cc src/common/DebugConfig.cc
+        src/veth/VEtherForward.cc src/veth/EtherFrame.cc src/veth/EtherPool.cc src/veth/BaseTapEndpoint.cc
+        src/veth/TapInterface.cc
 )
 
 target_include_directories(udpfwd PRIVATE src)
