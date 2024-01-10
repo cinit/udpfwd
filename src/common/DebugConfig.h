@@ -13,4 +13,11 @@ void SetDebug(bool debug) noexcept;
 
 }
 
+#define DLOGV(fmt, ...) \
+    do { \
+        if (::debugconfig::IsDebug()) [[unlikely]] { \
+            LOGV(fmt, ##__VA_ARGS__); \
+        } \
+    } while (false)
+
 #endif //UDPFWD_DEBUGCONFIG_H

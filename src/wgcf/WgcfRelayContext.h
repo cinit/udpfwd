@@ -12,8 +12,8 @@
 #include <vector>
 #include <unordered_map>
 
-#include "INetAddress.h"
-#include "INetSocketAddress.h"
+#include "common/INetAddress.h"
+#include "common/INetSocketAddress.h"
 
 
 namespace wgrelay {

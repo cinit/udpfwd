@@ -18,18 +18,12 @@
 #include "platform/log/Log.h"
 #include "platform/Time.h"
 #include "platform/ErrnoRestorer.h"
-#include "SocketAddressUtils.h"
+#include "common/SocketAddressUtils.h"
+#include "common/DebugConfig.h"
 #include "WireGuardPacketStruct.h"
-#include "DebugConfig.h"
 
 static constexpr auto LOG_TAG = "WgcfRelay";
 
-#define DLOGV(fmt, ...) \
-    do { \
-        if (::debugconfig::IsDebug()) [[unlikely]] { \
-            LOGV(fmt, ##__VA_ARGS__); \
-        } \
-    } while (false)
 
 namespace wgrelay {
 

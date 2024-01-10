@@ -15,17 +15,10 @@
 
 #include "platform/log/Log.h"
 #include "platform/ErrnoRestorer.h"
-#include "SocketAddressUtils.h"
-#include "DebugConfig.h"
+#include "common/SocketAddressUtils.h"
+#include "common/DebugConfig.h"
 
 static constexpr auto LOG_TAG = "UdpForwardWorker";
-
-#define DLOGV(fmt, ...) \
-    do { \
-        if (::debugconfig::IsDebug()) [[unlikely]] { \
-            LOGV(fmt, ##__VA_ARGS__); \
-        } \
-    } while (false);
 
 namespace udpfwd {
 
