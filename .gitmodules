@@ -1,0 +1,6 @@
+[submodule "libs/fmt"]
+	path = libs/fmt
+	url = https://github.com/fmtlib/fmt
+[submodule "libs/oneTBB"]
+	path = libs/oneTBB
+	url = https://github.com/oneapi-src/oneTBB
