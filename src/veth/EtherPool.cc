@@ -78,7 +78,7 @@ static constinit BufferPool g_bufferPool;
 
 std::unique_ptr<std::array<uint8_t, kMaxFrameSize>> EtherPool::ObtainBuffer() {
     auto buffer = g_bufferPool.ObtainBuffer();
-    if (buffer == nullptr) {
+    if (buffer == nullptr) [[unlikely]] {
         return std::make_unique<std::array<uint8_t, kMaxFrameSize>>();
     }
     return buffer;

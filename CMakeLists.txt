@@ -8,6 +8,10 @@ set(CMAKE_C_STANDARD 11)
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc -static -static-pie ")
 
+# oneTBB, BUILD_SHARED_LIBS = OFF, we want static lib, although that may really be a bad idea
+set(BUILD_SHARED_LIBS OFF)
+add_subdirectory(libs/oneTBB oneTBB)
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=format-invalid-specifier -Werror=return-type -Wno-invalid-offsetof")
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     SET(CLANG_CXX_EXTRA_OPT "-Werror=unknown-warning-option -Werror=format-invalid-specifier -Werror=call-to-pure-virtual-from-ctor-dtor")
@@ -34,10 +38,11 @@ add_executable(udpfwd src/platform/log/Log.cpp src/support/text/TextUtils.cc src
         src/platform/Time.cpp src/common/INetAddress.cc src/common/INetSocketAddress.cc src/platform/IoUtils.cc src/platform/ErrorMsg.cc
         src/udpfwd/UdpForwardWorker.cc src/udpfwd/UdpForward.cpp src/wgcf/WgcfRelay.cc src/wgcf/WgcfRelayWorker.cc
         src/common/Main.cc src/common/DebugConfig.cc
-        src/veth/VEtherForward.cc src/veth/EtherFrame.cc src/veth/EtherPool.cc src/veth/BaseTapEndpoint.cc
-        src/veth/TapInterface.cc
+        src/veth/VEtherForward.cc src/veth/EtherFrame.cc src/veth/EtherPool.cc
+        src/veth/TapInterface.cc src/veth/BaseSwitch.cc src/veth/PortMirroringSwitch.cc src/veth/RemoteEtherEndpoint.cc
+        src/veth/UnmanagedSwitch.cc src/veth/VEtherForwardContext.cc src/veth/VirtualNetEndpoint.cc src/veth/BaseStreamController.cc
 )
 
 target_include_directories(udpfwd PRIVATE src)
 
-target_link_libraries(udpfwd fmt-header-only)
+target_link_libraries(udpfwd fmt-header-only TBB::tbb)

@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <array>
+#include <string>
 #include <memory>
 #include <cstring>
 #include <algorithm>
@@ -85,6 +86,11 @@ public:
     }
 
     [[nodiscard]] EtherFrame Clone() const;
+
+    [[nodiscard]] std::string GetSourceMacString() const;
+
+    [[nodiscard]] std::string GetDestinationMacString() const;
+
 };
 
 }
