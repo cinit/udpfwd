@@ -7,7 +7,7 @@
 #include <fmt/format.h>
 
 vether::EtherFrame vether::EtherFrame::Clone() const {
-    auto another = EtherPool::ObtainBuffer();
+    auto another = BufferPool::ObtainBuffer();
     memcpy(another->data(), mData->data(), mSize);
     return EtherFrame(std::move(another), mSize);
 }

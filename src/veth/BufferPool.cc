@@ -2,7 +2,7 @@
 // Created by sulfate on 2024-01-09.
 //
 
-#include "EtherPool.h"
+#include "BufferPool.h"
 
 #include <atomic>
 #include <array>
@@ -12,7 +12,9 @@
 
 namespace vether {
 
-class BufferPool {
+static constexpr size_t kMaxBufferSize = BufferPool::kMaxBufferSize;
+
+class BufferPoolImpl {
 public:
     enum class Status : uint8_t {
         kEmpty = 0,
@@ -26,14 +28,14 @@ public:
     static_assert((size_t(kMaxPoolSize - 1) & size_t(kMaxPoolSize)) == 0, "kMaxPoolSize must be power of 2");
 
 private:
-    std::array<std::unique_ptr<std::array<uint8_t, kMaxFrameSize>>, kMaxPoolSize> buffers;
+    std::array<std::unique_ptr<std::array<uint8_t, kMaxBufferSize>>, kMaxPoolSize> buffers;
     std::array<std::atomic<Status>, kMaxPoolSize> status = {};
     std::atomic<size_t> head = 0; // begin, is the next available buffer
     std::atomic<size_t> tail = 0; // end, points to one past the last available buffer
 public:
-    BufferPool() = default;
+    BufferPoolImpl() = default;
 
-    [[nodiscard]] std::unique_ptr<std::array<uint8_t, kMaxFrameSize>> ObtainBuffer() noexcept {
+    [[nodiscard]] std::unique_ptr<std::array<uint8_t, kMaxBufferSize>> ObtainBuffer() noexcept {
         while (true) {
             size_t h = head.load(std::memory_order_acquire);
             size_t t = tail.load(std::memory_order_relaxed);
@@ -45,14 +47,14 @@ public:
                 while (!status[h].compare_exchange_weak(expected, Status::kInUseLoading, std::memory_order_acquire)) {
                     expected = Status::kAvailable;
                 }
-                std::unique_ptr<std::array<uint8_t, kMaxFrameSize>> buffer = std::move(buffers[h]);
+                std::unique_ptr<std::array<uint8_t, kMaxBufferSize>> buffer = std::move(buffers[h]);
                 status[h].store(Status::kEmpty, std::memory_order_release);
                 return buffer;
             }
         }
     }
 
-    void ReturnBuffer(std::unique_ptr<std::array<uint8_t, kMaxFrameSize>> buffer) noexcept {
+    void ReturnBuffer(std::unique_ptr<std::array<uint8_t, kMaxBufferSize>> buffer) noexcept {
         while (true) {
             size_t t = tail.load(std::memory_order_acquire);
             size_t h = head.load(std::memory_order_relaxed);
@@ -74,17 +76,17 @@ public:
     }
 };
 
-static constinit BufferPool g_bufferPool;
+static constinit BufferPoolImpl g_bufferPool;
 
-std::unique_ptr<std::array<uint8_t, kMaxFrameSize>> EtherPool::ObtainBuffer() {
+std::unique_ptr<std::array<uint8_t, kMaxBufferSize>> BufferPool::ObtainBuffer() {
     auto buffer = g_bufferPool.ObtainBuffer();
     if (buffer == nullptr) [[unlikely]] {
-        return std::make_unique<std::array<uint8_t, kMaxFrameSize>>();
+        return std::make_unique<std::array<uint8_t, kMaxBufferSize>>();
     }
     return buffer;
 }
 
-void EtherPool::ReturnBuffer(std::unique_ptr<std::array<uint8_t, kMaxFrameSize>> buffer) noexcept {
+void BufferPool::ReturnBuffer(std::unique_ptr<std::array<uint8_t, kMaxBufferSize>> buffer) noexcept {
     if (buffer != nullptr) [[likely]] {
         g_bufferPool.ReturnBuffer(std::move(buffer));
     }

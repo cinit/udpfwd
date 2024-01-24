@@ -12,13 +12,15 @@
 #include <cstring>
 #include <algorithm>
 
-#include "EtherPool.h"
+#include "BufferPool.h"
 #include "EtherPacketStruct.h"
 
 namespace vether {
 
 class EtherFrame {
 public:
+    static constexpr size_t kMaxBufferSize = BufferPool::kMaxBufferSize;
+
     // no copy to avoid unintended copy
     EtherFrame(const EtherFrame&) = delete;
 
@@ -30,7 +32,7 @@ public:
     EtherFrame& operator=(EtherFrame&&) = default;
 
 private:
-    std::unique_ptr<std::array<uint8_t, kMaxFrameSize>> mData = EtherPool::ObtainBuffer();
+    std::unique_ptr<std::array<uint8_t, kMaxBufferSize>> mData = BufferPool::ObtainBuffer();
     size_t mSize = 0;
 
 public:
@@ -38,11 +40,11 @@ public:
 
     explicit EtherFrame(size_t size) noexcept: mSize(size) {}
 
-    explicit EtherFrame(std::unique_ptr<std::array<uint8_t, kMaxFrameSize>> data, size_t size) noexcept
+    explicit EtherFrame(std::unique_ptr<std::array<uint8_t, kMaxBufferSize>> data, size_t size) noexcept
             : mData(std::move(data)), mSize(size) {}
 
     inline ~EtherFrame() noexcept {
-        EtherPool::ReturnBuffer(std::move(mData));
+        BufferPool::ReturnBuffer(std::move(mData));
     }
 
     [[nodiscard]] inline auto data() const noexcept {
@@ -58,7 +60,7 @@ public:
     }
 
     inline void SetSize(size_t size) {
-        mSize = std::min(uint16_t(size), kMaxFrameSize);
+        mSize = std::min(size, kMaxBufferSize);
     }
 
     [[nodiscard]] inline uint16_t GetVlanTag() const {
